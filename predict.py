@@ -140,7 +140,7 @@ def main(arg_list=None):
             print(f"Image {i} - After prediction: {type(mask)} with shape {mask.shape}")
 
             # Ensure the mask is in the correct format (2D, np.uint8)
-            mask = mask.astype(np.uint8)
+            #mask = mask.astype(np.uint8)
 
             print(f"Image {i} - After prediction and conv: {type(mask)} with shape {mask.shape}")
 
