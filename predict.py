@@ -160,11 +160,14 @@ def main(arg_list=None):
 
             print(f"Image {i} - After prediction: {type(mask)} with shape {mask.shape}")
 
+            pil_mask_path = os.path.join(output_dir, f'image_{i}_mask.png')
+            save_intermediate_image(mask, pil_mask_path)
+
             # Ensure the mask is in the correct format (2D, np.uint8)
             mask = mask.astype(np.uint8)
 
-            pil_mask_path = os.path.join(output_dir, f'image_{i}_mask.png')
-            save_intermediate_image(mask, pil_mask_path)
+            pil_mask_path_2 = os.path.join(output_dir, f'image_{i}_mask.png')
+            save_intermediate_image(mask, pil_mask_path_2)
 
             print(f"Image {i} - Saved predicted mask image as {pil_mask_path}")
 
