@@ -159,7 +159,16 @@ def main(arg_list=None):
                                device=device)
 
             # Ensure the mask is in the correct format (2D, np.uint8)
+
+            print(f"Image {i} - After prediction: {type(mask)}")
+
+            pil_mask_path = os.path.join(output_dir, f'image_{i}_mask.png')
+            mask.save(pil_mask_path)
+
             mask = mask.astype(np.uint8)
+
+            pil_mask_gray = os.path.join(output_dir, f'image_{i}_mask_gray.png')
+            mask.save(pil_mask_gray)
 
             tif_writer.write(mask, contiguous=True)
 
