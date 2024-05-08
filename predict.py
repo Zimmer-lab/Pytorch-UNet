@@ -12,6 +12,15 @@ from utils.data_loading import BasicDataset
 from unet import UNet
 from utils.utils import plot_img_and_mask
 
+import cv2
+import numpy as np
+import pandas as pd
+import tifffile as tiff
+from natsort import natsorted
+from imutils.scopereader import MicroscopeDataReader
+import dask.array as da
+from skimage.morphology import binary_erosion
+
 def predict_img(net,
                 full_img,
                 device,
@@ -48,6 +57,8 @@ def get_args():
                         help='Scale factor for the input images')
     parser.add_argument('--bilinear', action='store_true', default=False, help='Use bilinear upsampling')
     parser.add_argument('--classes', '-c', type=int, default=2, help='Number of classes')
+    parser.add_argument('--input_file_path', '-if', metavar='INPUT_FILE_PATH', help='Path to a single input file')
+    parser.add_argument('--output_file_path', '-of', metavar='OUTPUT_FILE_PATH', help='Path to a single output file')
     
     return parser.parse_args()
 
@@ -75,6 +86,14 @@ def mask_to_image(mask: np.ndarray, mask_values):
 
     return Image.fromarray(out)
 
+# Function to convert an image to RGB
+def to_rgb(img):
+    if len(img.shape) == 2:  # Grayscale
+        return cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+    elif img.shape[2] == 4:  # RGBA
+        return cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
+    return img  # already RGB
+
 
 if __name__ == '__main__':
     args = get_args()
@@ -96,22 +115,17 @@ if __name__ == '__main__':
 
     logging.info('Model loaded!')
 
-    for i, filename in enumerate(in_files):
-        logging.info(f'Predicting image {filename} ...')
-        img = Image.open(filename)
+    reader_obj = MicroscopeDataReader(args.input_filepath, as_raw_tiff=True, raw_tiff_num_slices=1)
+    tif = da.squeeze(reader_obj.dask_array)
+    with tiff.TiffWriter(args.output_filepath, bigtiff=True) as tif_writer:
+        for i, img in enumerate(tif):
 
-        mask = predict_img(net=net,
-                           full_img=img,
-                           scale_factor=args.scale,
-                           out_threshold=args.mask_threshold,
-                           device=device)
+            img = to_rgb(img)
 
-        if not args.no_save:
-            out_filename = out_files[i]
-            result = mask_to_image(mask, mask_values)
-            result.save(out_filename)
-            logging.info(f'Mask saved to {out_filename}')
+            mask = predict_img(net=net,
+                               full_img=img,
+                               scale_factor=args.scale,
+                               out_threshold=args.mask_threshold,
+                               device=device)
 
-        if args.viz:
-            logging.info(f'Visualizing results for image {filename}, close to continue...')
-            plot_img_and_mask(img, mask)
+            tif_writer.write(mask, contiguous=True)
