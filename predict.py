@@ -28,6 +28,13 @@ def predict_img(net,
                 scale_factor=1,
                 out_threshold=0.5):
     net.eval()
+
+    # Convert NumPy array to PIL Image if needed
+    if isinstance(full_img, np.ndarray):
+        pil_img = Image.fromarray(full_img)
+    else:
+        pil_img = full_img
+
     img = torch.from_numpy(BasicDataset.preprocess(None, full_img, scale_factor, is_mask=False))
     img = img.unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
@@ -107,6 +114,7 @@ def main(arg_list=None):
             except (ValueError, TypeError) as e:
                 logging.error(f"Skipping image at index {i} due to conversion error: {e}")
                 continue
+
 
             mask = predict_img(net=net,
                                full_img=img,
