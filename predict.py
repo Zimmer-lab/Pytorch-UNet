@@ -79,25 +79,14 @@ def to_rgb(img):
     else:
         raise ValueError(f"Unexpected image shape: {img.shape}")
 
-def convert_array_to_pil_image(full_img):
+def convert_array_to_pil_image(array):
     """Convert a NumPy array to a PIL image."""
-    if isinstance(full_img, np.ndarray):
-        if full_img.ndim == 2:
-            # Grayscale image
-            pil_img = Image.fromarray(full_img, mode='L')
-        elif full_img.ndim == 3:
-            if full_img.shape[2] == 3:
-                # RGB image
-                pil_img = Image.fromarray(full_img, mode='RGB')
-            elif full_img.shape[2] == 4:
-                # RGBA image
-                pil_img = Image.fromarray(full_img, mode='RGBA')
-            else:
-                raise ValueError(f"Unsupported number of channels: {full_img.shape[2]}")
-        else:
-            raise ValueError(f"Unsupported image array shape: {full_img.shape}")
-    else:
-        pil_img = full_img
+    # Ensure the input is a NumPy array
+    if not isinstance(array, np.ndarray):
+        raise TypeError("Input should be a NumPy array")
+
+    # Convert to RGB mode
+    pil_img = Image.fromarray(array).convert('RGB')
 
     return pil_img
 
@@ -122,25 +111,18 @@ def main(arg_list=None):
 
     logging.info('Model loaded!')
 
-    output_dir = os.path.dirname(args.output_file_path)
-
     reader_obj = MicroscopeDataReader(args.input_file_path, as_raw_tiff=True, raw_tiff_num_slices=1)
     tif = da.squeeze(reader_obj.dask_array)
+
     with tiff.TiffWriter(args.output_file_path, bigtiff=True) as tif_writer:
         for i, img in enumerate(tif):
             print(f"\nImage {i} - Initial `img` type: {type(img)}")
             img = np.array(img)
             print(f"\nImage {i} - Initial `img` type: {type(img)}")
 
-            initial_png_path = os.path.join(output_dir, f'image_{i}_initial.png')
-            save_intermediate_image(img, initial_png_path)
-
             try:
                 img = to_rgb(img)
                 print(f"Image {i} - After `to_rgb` conversion: {type(img)} with shape {img.shape}")
-
-                rgb_png_path = os.path.join(output_dir, f'image_{i}_rgb.png')
-                save_intermediate_image(img, rgb_png_path)
 
             except (ValueError, TypeError) as e:
                 logging.error(f"Skipping image at index {i} due to conversion error: {e}")
@@ -148,9 +130,6 @@ def main(arg_list=None):
 
             img = convert_array_to_pil_image(img)
             print(f"Image {i} - After `convert_array_to_pil_image`: {type(img)}")
-
-            pil_png_path = os.path.join(output_dir, f'image_{i}_pil.png')
-            img.save(pil_png_path)
 
             mask = predict_img(net=net,
                                full_img=img,
@@ -160,16 +139,10 @@ def main(arg_list=None):
 
             print(f"Image {i} - After prediction: {type(mask)} with shape {mask.shape}")
 
-            pil_mask_path = os.path.join(output_dir, f'image_{i}_mask.png')
-            save_intermediate_image(mask, pil_mask_path)
-
             # Ensure the mask is in the correct format (2D, np.uint8)
             mask = mask.astype(np.uint8)
 
-            pil_mask_path_2 = os.path.join(output_dir, f'image_{i}_mask_2.png')
-            save_intermediate_image(mask, pil_mask_path_2)
-
-            print(f"Image {i} - Saved predicted mask image as {pil_mask_path}")
+            print(f"Image {i} - After prediction and conv: {type(mask)} with shape {mask.shape}")
 
             # Write the mask to the TIFF writer
             tif_writer.write(mask, contiguous=True)
