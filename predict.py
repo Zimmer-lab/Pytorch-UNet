@@ -158,18 +158,24 @@ def main(arg_list=None):
                                out_threshold=args.mask_threshold,
                                device=device)
 
+            print(f"Image {i} - After prediction: {type(mask)} with shape {mask.shape}")
+
             # Ensure the mask is in the correct format (2D, np.uint8)
-
-            print(f"Image {i} - After prediction: {type(mask)}")
-
-            pil_mask_path = os.path.join(output_dir, f'image_{i}_mask.png')
-            mask.save(pil_mask_path)
-
             mask = mask.astype(np.uint8)
 
-            pil_mask_gray = os.path.join(output_dir, f'image_{i}_mask_gray.png')
-            mask.save(pil_mask_gray)
+            # Convert mask to a PIL image for saving
+            pil_mask = Image.fromarray(mask)
 
+            pil_mask_path = os.path.join(output_dir, f'image_{i}_mask.png')
+            pil_mask.save(pil_mask_path)
+            print(f"Image {i} - Saved predicted mask image as {pil_mask_path}")
+
+            # Optionally, save the mask as grayscale
+            pil_mask_gray_path = os.path.join(output_dir, f'image_{i}_mask_gray.png')
+            pil_mask.convert('L').save(pil_mask_gray_path)
+            print(f"Image {i} - Saved grayscale mask image as {pil_mask_gray_path}")
+
+            # Write the mask to the TIFF writer
             tif_writer.write(mask, contiguous=True)
 
 
