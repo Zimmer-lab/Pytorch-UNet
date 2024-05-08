@@ -166,7 +166,7 @@ def main(arg_list=None):
             # Ensure the mask is in the correct format (2D, np.uint8)
             mask = mask.astype(np.uint8)
 
-            pil_mask_path_2 = os.path.join(output_dir, f'image_{i}_mask.png')
+            pil_mask_path_2 = os.path.join(output_dir, f'image_{i}_mask_2.png')
             save_intermediate_image(mask, pil_mask_path_2)
 
             print(f"Image {i} - Saved predicted mask image as {pil_mask_path}")
