@@ -90,9 +90,21 @@ def convert_array_to_pil_image(array):
 
     return pil_img
 
-def save_intermediate_image(img_array, filename):
-    img_pil = Image.fromarray(img_array)
-    img_pil.save(filename)
+def mask_to_image(mask: np.ndarray, mask_values):
+    if isinstance(mask_values[0], list):
+        out = np.zeros((mask.shape[-2], mask.shape[-1], len(mask_values[0])), dtype=np.uint8)
+    elif mask_values == [0, 1]:
+        out = np.zeros((mask.shape[-2], mask.shape[-1]), dtype=bool)
+    else:
+        out = np.zeros((mask.shape[-2], mask.shape[-1]), dtype=np.uint8)
+
+    if mask.ndim == 3:
+        mask = np.argmax(mask, axis=0)
+
+    for i, v in enumerate(mask_values):
+        out[mask == i] = v
+
+    return np.array(out)
 
 def main(arg_list=None):
     args = get_args()
@@ -137,15 +149,10 @@ def main(arg_list=None):
                                out_threshold=args.mask_threshold,
                                device=device)
 
-            print(f"Image {i} - After prediction: {type(mask)} with shape {mask.shape}")
-
-            # Ensure the mask is in the correct format (2D, np.uint8)
-            #mask = mask.astype(np.uint8)
-
-            print(f"Image {i} - After prediction and conv: {type(mask)} with shape {mask.shape}")
+            mask_final = mask_to_image(mask, mask_values)
 
             # Write the mask to the TIFF writer
-            tif_writer.write(mask, contiguous=True)
+            tif_writer.write(mask_final, contiguous=True)
 
 
 if __name__ == '__main__':
