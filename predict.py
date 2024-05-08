@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import sys
 
 import numpy as np
 import torch
@@ -46,7 +47,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='Predict masks from input images')
     parser.add_argument('--model', '-m', default='MODEL.pth', metavar='FILE',
                         help='Specify the file in which the model is stored')
-    parser.add_argument('--input', '-i', metavar='INPUT', nargs='+', help='Filenames of input images', required=True)
+    parser.add_argument('--input', '-i', metavar='INPUT', nargs='+', help='Filenames of input images')
     parser.add_argument('--output', '-o', metavar='OUTPUT', nargs='+', help='Filenames of output images')
     parser.add_argument('--viz', '-v', action='store_true',
                         help='Visualize the images as they are processed')
@@ -62,30 +63,6 @@ def get_args():
     
     return parser.parse_args()
 
-
-def get_output_filenames(args):
-    def _generate_name(fn):
-        return f'{os.path.splitext(fn)[0]}_OUT.png'
-
-    return args.output or list(map(_generate_name, args.input))
-
-
-def mask_to_image(mask: np.ndarray, mask_values):
-    if isinstance(mask_values[0], list):
-        out = np.zeros((mask.shape[-2], mask.shape[-1], len(mask_values[0])), dtype=np.uint8)
-    elif mask_values == [0, 1]:
-        out = np.zeros((mask.shape[-2], mask.shape[-1]), dtype=bool)
-    else:
-        out = np.zeros((mask.shape[-2], mask.shape[-1]), dtype=np.uint8)
-
-    if mask.ndim == 3:
-        mask = np.argmax(mask, axis=0)
-
-    for i, v in enumerate(mask_values):
-        out[mask == i] = v
-
-    return Image.fromarray(out)
-
 # Function to convert an image to RGB
 def to_rgb(img):
     if len(img.shape) == 2:  # Grayscale
@@ -94,13 +71,9 @@ def to_rgb(img):
         return cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
     return img  # already RGB
 
-
-if __name__ == '__main__':
+def main(arg_list=None):
     args = get_args()
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-
-    in_files = args.input
-    out_files = get_output_filenames(args)
 
     net = UNet(n_channels=3, n_classes=args.classes, bilinear=args.bilinear)
 
@@ -119,7 +92,6 @@ if __name__ == '__main__':
     tif = da.squeeze(reader_obj.dask_array)
     with tiff.TiffWriter(args.output_filepath, bigtiff=True) as tif_writer:
         for i, img in enumerate(tif):
-
             img = to_rgb(img)
 
             mask = predict_img(net=net,
@@ -129,3 +101,7 @@ if __name__ == '__main__':
                                device=device)
 
             tif_writer.write(mask, contiguous=True)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])  # exclude the script name from the args when called from shell
