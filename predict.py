@@ -28,13 +28,6 @@ def predict_img(net,
                 scale_factor=1,
                 out_threshold=0.5):
     net.eval()
-
-    # Convert NumPy array to PIL Image if needed
-    if isinstance(full_img, np.ndarray):
-        pil_img = Image.fromarray(full_img)
-    else:
-        pil_img = full_img
-
     img = torch.from_numpy(BasicDataset.preprocess(None, full_img, scale_factor, is_mask=False))
     img = img.unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
@@ -86,6 +79,28 @@ def to_rgb(img):
     else:
         raise ValueError(f"Unexpected image shape: {img.shape}")
 
+def convert_array_to_pil_image(full_img):
+    """Convert a NumPy array to a PIL image."""
+    if isinstance(full_img, np.ndarray):
+        if full_img.ndim == 2:
+            # Grayscale image
+            pil_img = Image.fromarray(full_img, mode='L')
+        elif full_img.ndim == 3:
+            if full_img.shape[2] == 3:
+                # RGB image
+                pil_img = Image.fromarray(full_img, mode='RGB')
+            elif full_img.shape[2] == 4:
+                # RGBA image
+                pil_img = Image.fromarray(full_img, mode='RGBA')
+            else:
+                raise ValueError(f"Unsupported number of channels: {full_img.shape[2]}")
+        else:
+            raise ValueError(f"Unsupported image array shape: {full_img.shape}")
+    else:
+        pil_img = full_img
+
+    return pil_img
+
 def main(arg_list=None):
     args = get_args()
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -115,6 +130,7 @@ def main(arg_list=None):
                 logging.error(f"Skipping image at index {i} due to conversion error: {e}")
                 continue
 
+            img = convert_array_to_pil_image(img)
 
             mask = predict_img(net=net,
                                full_img=img,
