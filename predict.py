@@ -101,6 +101,10 @@ def convert_array_to_pil_image(full_img):
 
     return pil_img
 
+def save_intermediate_image(img_array, filename):
+    img_pil = Image.fromarray(img_array)
+    img_pil.save(filename)
+
 def main(arg_list=None):
     args = get_args()
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -118,6 +122,8 @@ def main(arg_list=None):
 
     logging.info('Model loaded!')
 
+    output_dir = os.path.dirname(args.output_file_path)
+
     reader_obj = MicroscopeDataReader(args.input_file_path, as_raw_tiff=True, raw_tiff_num_slices=1)
     tif = da.squeeze(reader_obj.dask_array)
     with tiff.TiffWriter(args.output_file_path, bigtiff=True) as tif_writer:
@@ -126,15 +132,25 @@ def main(arg_list=None):
             img = np.array(img)
             print(f"\nImage {i} - Initial `img` type: {type(img)}")
 
+            initial_png_path = os.path.join(output_dir, f'image_{i}_initial.png')
+            save_intermediate_image(img, initial_png_path)
+
             try:
                 img = to_rgb(img)
                 print(f"Image {i} - After `to_rgb` conversion: {type(img)} with shape {img.shape}")
+
+                rgb_png_path = os.path.join(output_dir, f'image_{i}_rgb.png')
+                save_intermediate_image(img, rgb_png_path)
+
             except (ValueError, TypeError) as e:
                 logging.error(f"Skipping image at index {i} due to conversion error: {e}")
                 continue
 
             img = convert_array_to_pil_image(img)
             print(f"Image {i} - After `convert_array_to_pil_image`: {type(img)}")
+
+            pil_png_path = os.path.join(output_dir, f'image_{i}_pil.png')
+            img.save(pil_png_path)
 
             mask = predict_img(net=net,
                                full_img=img,
