@@ -65,11 +65,19 @@ def get_args():
 
 # Function to convert an image to RGB
 def to_rgb(img):
+    if img is None:
+        raise ValueError("Input image is None")
+    if not isinstance(img, np.ndarray):
+        raise TypeError(f"Expected a numpy array but got {type(img)}")
+
     if len(img.shape) == 2:  # Grayscale
         return cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-    elif img.shape[2] == 4:  # RGBA
+    elif len(img.shape) == 3 and img.shape[2] == 4:  # RGBA
         return cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
-    return img  # already RGB
+    elif len(img.shape) == 3 and img.shape[2] == 3:  # Already RGB
+        return img
+    else:
+        raise ValueError(f"Unexpected image shape: {img.shape}")
 
 def main(arg_list=None):
     args = get_args()
@@ -92,7 +100,13 @@ def main(arg_list=None):
     tif = da.squeeze(reader_obj.dask_array)
     with tiff.TiffWriter(args.output_file_path, bigtiff=True) as tif_writer:
         for i, img in enumerate(tif):
-            img = to_rgb(img)
+            img = np.array(img)
+
+            try:
+                img = to_rgb(img)
+            except (ValueError, TypeError) as e:
+                logging.error(f"Skipping image at index {i} due to conversion error: {e}")
+                continue
 
             mask = predict_img(net=net,
                                full_img=img,
