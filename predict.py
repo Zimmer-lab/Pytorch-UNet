@@ -122,21 +122,28 @@ def main(arg_list=None):
     tif = da.squeeze(reader_obj.dask_array)
     with tiff.TiffWriter(args.output_file_path, bigtiff=True) as tif_writer:
         for i, img in enumerate(tif):
+            print(f"\nImage {i} - Initial `img` type: {type(img)}")
             img = np.array(img)
+            print(f"\nImage {i} - Initial `img` type: {type(img)}")
 
             try:
                 img = to_rgb(img)
+                print(f"Image {i} - After `to_rgb` conversion: {type(img)} with shape {img.shape}")
             except (ValueError, TypeError) as e:
                 logging.error(f"Skipping image at index {i} due to conversion error: {e}")
                 continue
 
             img = convert_array_to_pil_image(img)
+            print(f"Image {i} - After `convert_array_to_pil_image`: {type(img)}")
 
             mask = predict_img(net=net,
                                full_img=img,
                                scale_factor=args.scale,
                                out_threshold=args.mask_threshold,
                                device=device)
+
+            # Ensure the mask is in the correct format (2D, np.uint8)
+            mask = mask.astype(np.uint8)
 
             tif_writer.write(mask, contiguous=True)
 
