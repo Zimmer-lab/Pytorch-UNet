@@ -121,6 +121,8 @@ def filter_output_image(mask):
     if not isinstance(mask, np.ndarray) or mask.dtype not in [np.uint8, np.bool]:
         raise ValueError("Input must be a binary image of type np.uint8 or np.bool")
 
+    print("filtering mask for biggest object (worm)")
+
     # Find all unique elements
     num_labels, labels = cv2.connectedComponents(mask)
 
@@ -181,7 +183,7 @@ def main(arg_list=None):
 
             mask_final = mask_to_image(mask, mask_values)
 
-            if args.filter_mask == 1:
+            if str(args.filter_mask) == "1":
                 mask_final = filter_output_image(mask_final)
 
             # Write the mask to the TIFF writer
