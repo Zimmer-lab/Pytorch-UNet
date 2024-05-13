@@ -60,7 +60,8 @@ def get_args():
     parser.add_argument('--classes', '-c', type=int, default=2, help='Number of classes')
     parser.add_argument('--input_file_path', '-if', metavar='INPUT_FILE_PATH', help='Path to a single input file')
     parser.add_argument('--output_file_path', '-of', metavar='OUTPUT_FILE_PATH', help='Path to a single output file')
-    
+    parser.add_argument('--filter_mask', '-f_m', metavar='FILTER_MASK', default = 0, help='set 1 if you want to filter predicted mask for only biggest object')
+
     return parser.parse_args()
 
 # Function to convert an image to RGB
@@ -106,6 +107,23 @@ def mask_to_image(mask: np.ndarray, mask_values):
 
     return np.array(out)
 
+def filter_output_image(mask):
+
+    # Find all unique elements
+    _, labels = cv2.connectedComponents(mask)
+
+    #if no elements found return original mask
+    if labels.max() == 0:
+        return mask
+
+    # Count the pixels for each component, find the largest one, exclude background label 0
+    largest_component = np.argmax(np.bincount(labels.flat)[1:]) + 1
+
+    # Create a new binary mask where only the largest component is white
+    filtered_image = (labels == largest_component).astype(np.uint8) * 255
+
+    return filtered_image
+
 def main(arg_list=None):
     args = get_args()
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -150,6 +168,9 @@ def main(arg_list=None):
                                device=device)
 
             mask_final = mask_to_image(mask, mask_values)
+
+            if args.filter_mask == 1:
+                mask_final = filter_output_image(mask_final)
 
             # Write the mask to the TIFF writer
             tif_writer.write(mask_final, contiguous=True)
