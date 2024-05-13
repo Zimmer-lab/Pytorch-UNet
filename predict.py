@@ -107,13 +107,25 @@ def mask_to_image(mask: np.ndarray, mask_values):
 
     return np.array(out)
 
+
 def filter_output_image(mask):
+    """
+    Isolate the largest connected component in a binary image.
+
+    Parameters:
+    - mask (numpy.ndarray): A binary image where the objects are 255 and the background is 0.
+
+    Returns:
+    - numpy.ndarray: A binary image with only the largest connected component retained.
+    """
+    if not isinstance(mask, np.ndarray) or mask.dtype not in [np.uint8, np.bool]:
+        raise ValueError("Input must be a binary image of type np.uint8 or np.bool")
 
     # Find all unique elements
-    _, labels = cv2.connectedComponents(mask)
+    num_labels, labels = cv2.connectedComponents(mask)
 
-    #if no elements found return original mask
-    if labels.max() == 0:
+    # If no elements found return original mask
+    if num_labels == 1:
         return mask
 
     # Count the pixels for each component, find the largest one, exclude background label 0
