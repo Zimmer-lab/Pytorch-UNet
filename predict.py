@@ -144,6 +144,9 @@ def main(arg_list=None):
 
     net = UNet(n_channels=3, n_classes=args.classes, bilinear=args.bilinear)
 
+    print(torch.cuda.is_available())
+    print(torch.version.cuda)
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info(f'Loading model {args.model}')
     logging.info(f'Using device {device}')
