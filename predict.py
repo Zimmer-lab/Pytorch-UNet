@@ -118,7 +118,7 @@ def filter_output_image(mask):
     Returns:
     - numpy.ndarray: A binary image with only the largest connected component retained.
     """
-    if not isinstance(mask, np.ndarray) or mask.dtype not in [np.uint8, np.bool]:
+    if not isinstance(mask, np.ndarray) or mask.dtype not in [np.uint8, np.bool_]:
         raise ValueError("Input must be a binary image of type np.uint8 or np.bool")
 
     print("filtering mask for biggest object (worm)")
