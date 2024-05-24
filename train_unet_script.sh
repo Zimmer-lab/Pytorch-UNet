@@ -1,11 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=DLC_analyze
+#SBATCH --job-name=Unet_train
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-node=1
-#SBATCH --partition=gpu
+#SBATCH --partition=basic, gpu
 #SBATCH --mem=200GB  # Increased memory
 #SBATCH --time=5-12:00:00
+#SBATCH --gres=shard:32
 #SBATCH --output=log_unet_train.out
 #SBATCH --error=log_unet_train.err
 
