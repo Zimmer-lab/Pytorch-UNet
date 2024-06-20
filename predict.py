@@ -158,7 +158,7 @@ def main(arg_list=None):
 
     logging.info('Model loaded!')
 
-    reader_obj = MicroscopeDataReader(args.input_file_path)
+    reader_obj = MicroscopeDataReader(args.input_file_path, as_raw_tiff=True, raw_tiff_num_slices=1)
     tif = da.squeeze(reader_obj.dask_array)
 
     with tiff.TiffWriter(args.output_file_path, bigtiff=True) as tif_writer:
