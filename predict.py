@@ -158,7 +158,16 @@ def main(arg_list=None):
 
     logging.info('Model loaded!')
 
-    reader_obj = MicroscopeDataReader(args.input_file_path, as_raw_tiff=True, raw_tiff_num_slices=1)
+    # Check if the input path is a directory or a BTF file
+    if os.path.isdir(args.input_file_path):
+        # Initialize for directory
+        reader_obj = MicroscopeDataReader(args.input_file_path)
+    elif args.input_file_path.lower().endswith('.btf'):
+        # Initialize for BTF file
+        reader_obj = MicroscopeDataReader(args.input_file_path, as_raw_tiff=True, raw_tiff_num_slices=1)
+    else:
+        raise ValueError("Invalid input file path. Please provide a directory or a .btf file.")
+
     tif = da.squeeze(reader_obj.dask_array)
 
     with tiff.TiffWriter(args.output_file_path, bigtiff=True) as tif_writer:
