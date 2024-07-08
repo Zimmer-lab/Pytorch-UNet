@@ -1,3 +1,40 @@
+## Modification for snakemake:
+
+use predict.py for snakemake implementation
+
+snake_rule:
+
+rule unet_predict_and_filter:
+    input:
+        btf_file = "{datasets_output}raw_stack.btf"
+    params:
+        model = config["unet_segmentation_model"],
+        filter_prediction = config["filter_prediction"] 
+    output:
+        btf_file = "{datasets_output}raw_stack_mask.btf"
+    shell:
+        """
+        source /lisc/app/conda/miniconda3/bin/activate /lisc/scratch/neurobiology/zimmer/.conda/envs/unet_shared
+        python /lisc/scratch/neurobiology/zimmer/schaar/code/github/unet_pytorch/Pytorch-UNet/predict.py \
+            --model {params.model} \
+            --input_file_path {input.btf_file} \
+            --output_file_path {output.btf_file} \
+            --filter_mask {params.filter_prediction} \
+        """
+
+If you use other 'scale' value than default also send this parameter withing snakemake
+
+new parameters for snakemake implementation:
+
+ --input_file_path {input.btf_file} -> input rawstack.btf or folder with rawdata
+
+ --output_file_path {output.btf_file} -> output maskstack.btf directory
+
+--filter_mask {params.filter_prediction} -> can be '1' or '0' , if set to one filter step select biggest mask and get rid of "small" dirt in tge mask. THis is not necessary and only recomended when the mask contains small addiitional white spots
+
+
+Original description:
+
 # U-Net: Semantic segmentation with PyTorch
 <a href="#"><img src="https://img.shields.io/github/actions/workflow/status/milesial/PyTorch-UNet/main.yml?logo=github&style=for-the-badge" /></a>
 <a href="https://hub.docker.com/r/milesial/unet"><img src="https://img.shields.io/badge/docker%20image-available-blue?logo=Docker&style=for-the-badge" /></a>
