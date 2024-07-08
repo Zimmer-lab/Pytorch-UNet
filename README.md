@@ -7,21 +7,13 @@ snake_rule:
 rule unet_predict_and_filter:
 
     input:
-    
-        
         btf_file = "{datasets_output}raw_stack.btf"
     params:
-    
         model = config["unet_segmentation_model"],
-        
         filter_prediction = config["filter_prediction"] 
-        
     output:
-    
         btf_file = "{datasets_output}raw_stack_mask.btf"
-        
     shell:
-    
         """
         source /lisc/app/conda/miniconda3/bin/activate /lisc/scratch/neurobiology/zimmer/.conda/envs/unet_shared
         python /lisc/scratch/neurobiology/zimmer/schaar/code/github/unet_pytorch/Pytorch-UNet/predict.py \
